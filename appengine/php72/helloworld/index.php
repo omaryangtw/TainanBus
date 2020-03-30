@@ -1,3 +1,2 @@
 <?php
-
-echo "hello world!";
+readfile("index.html");

@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>大台南公車路線</title>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script   src="https://code.jquery.com/jquery-3.4.1.min.js"   integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="   crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-csv/1.0.8/jquery.csv.min.js"></script>
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+	      width: 80%;
+      }
+      #list {
+        height: 80%;
+        width:  20%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    
+    <div id="map" class="col-md-8"></div>
+    <div id="list" class="col-md-4">
+      <div class="row info">
+        <div class="col-md-12">說明：</div>
+        <div class="col-md-12">2019年度大台南公車用量統計 </div>
+        <div class="col-md-12">2019年7月人口資料 </div>
+      </div>
+      <div class="row">
+        <div class="col-md-4">公車：</div>
+        <div class="col-md-4 line"></div>
+        <div class="col-md-4 usage"></div>
+      </div>
+      
+      <div class="row">
+        <div class="col-md-5">行政區：</div>
+        <div class="col-md-7 village"></div>
+      </div>
+         
+      <div class="row">
+        <div class="col-md-5">老年人口：</div>
+        <div class="col-md-7  elderly"></div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-12">
+          <form name="myForm">醫院標記
+            <input type="radio" id="hospitalon" name="myRadios"  checked="checked" value="on"> 開 </input>
+            <input type="radio" id="hospitaloff" name="myRadios"  value="off"> 關 </input>
+          </form>
+        </div>
+      </div>
+
+
+    </div>
+
+
+    <script>
+
+
+      function initMap() {
+        var style = [
+  {
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#f5f5f5"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.icon",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#616161"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.text.stroke",
+    "stylers": [
+      {
+        "color": "#f5f5f5"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.land_parcel",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#bdbdbd"
+      }
+    ]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#eeeeee"
+      }
+    ]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#757575"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#e5e5e5"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#9e9e9e"
+      }
+    ]
+  },
+  {
+    "featureType": "road",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#ffffff"
+      }
+    ]
+  },
+  {
+    "featureType": "road.arterial",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#757575"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#dadada"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#616161"
+      }
+    ]
+  },
+  {
+    "featureType": "road.local",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#9e9e9e"
+      }
+    ]
+  },
+  {
+    "featureType": "transit.line",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#e5e5e5"
+      }
+    ]
+  },
+  {
+    "featureType": "transit.station",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#eeeeee"
+      }
+    ]
+  },
+  {
+    "featureType": "water",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#c9c9c9"
+      }
+    ]
+  },
+  {
+    "featureType": "water",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#9e9e9e"
+      }
+    ]
+  }
+]
+        var uluru = {lat: 23 , lng: 120.5};
+        var map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 12,
+          mapTypeId: 'roadmap',
+          zoomControl: false,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: true,
+          center: {lat: 23.027859, lng: 120.235706},
+          styles: style
+        });
+        var dashboard = document.getElementById('list');
+        var villages = [];
+        var hospitals = [];
+
+        $.get("https://docs.google.com/spreadsheets/d/e/2PACX-1vTzGvno7WqXWSWwT9oAVlYxNKS2TWbMkcNXOpDblICOHfmISdewyTSb7IWqI6e7hDtfiV80RXuVdSQ-/pub?gid=2034908759&single=true&output=csv", function(CSVdata){
+          villagedata = $.csv.toArrays(CSVdata);
+          polygons = [];
+          coords = [];
+
+          for(var i = 1 ; i < villagedata.length ; i++){
+            coords[i] = villagedata[i][0].split(',');
+          }
+          for(let j = 1 ; j < villagedata.length ; j++){
+            polygon = [];
+            for(let i = 0; i < coords[j].length ; i++){
+              var coord = new google.maps.LatLng(coords[j][i].split(' ')[1], coords[j][i].split(' ')[0]);
+              polygon.push(coord);
+            }
+            polygons.push(polygon);
+          }
+
+          google.maps.Polyline.prototype.getPosition = function() {
+             return this.getPath().getAt(0);
+          }
+
+          var decimal2hex = function (rgb) { 
+            var hex = Number(rgb).toString(16);
+            if (hex.length < 2) {
+                hex = "0" + hex;
+            }
+            return hex;
+          };
+
+          var rgb2hex = function(r,g,b){
+            var red = decimal2hex(r);
+            var green = decimal2hex(g);
+            var blue = decimal2hex(b);
+            return '#'+String(red)+String(green)+String(blue);
+          }
+          var path = [];
+          var info = [];
+          for(let i = 1; i < villagedata.length ; i++){
+            var village = new google.maps.Polygon({
+              path: polygons[i],
+              strokeColor: '#777777',
+              strokeOpacity: 0.5,
+              strokeWeight: 0.2,
+              fillColor: rgb2hex( Math.round(219-villagedata[i+1][11]/villagedata[i+1][10]*2.5*(219-49)) , Math.round(255-villagedata[i+1][11]/villagedata[i+1][10]*2.5*(255-99)) , Math.round(219-villagedata[i+1][11]/villagedata[i+1][10]*2.5*(219-49))),
+              fillOpacity: villagedata[i+1][11]/villagedata[i+1][10]
+            });
+            villages.push(village);
+            
+            
+
+            village.setMap(map);
+            
+            google.maps.event.addListener(village, 'mouseover', function(event){
+              villages[i-1].setOptions({fillOpacity: 0.9});
+              const villname = document.querySelector('.village');
+              villname.textContent = villagedata[i+1][3]+villagedata[i+1][4];
+              const elderly = document.querySelector('.elderly');
+              elderly.textContent = villagedata[i+1][11]+'('+Math.round(villagedata[i+1][11]/villagedata[i+1][10]*100)+'%)';
+            });
+            google.maps.event.addListener(village, 'mouseout', function(event){
+              villages[i-1].setOptions({fillOpacity: villagedata[i][11]/villagedata[i][10]});
+              const villname = document.querySelector('.village');
+              villname.textContent = "";
+              const elderly = document.querySelector('.elderly');
+              elderly.textContent = "";
+            });
+          }
+        });
+
+
+
+        $.get("https://docs.google.com/spreadsheets/d/e/2PACX-1vTzGvno7WqXWSWwT9oAVlYxNKS2TWbMkcNXOpDblICOHfmISdewyTSb7IWqI6e7hDtfiV80RXuVdSQ-/pub?gid=2054878742&single=true&output=csv", function(CSVdata){
+          data = $.csv.toArrays(CSVdata);
+          lines = [];
+          coordx = [];
+          coordy = [];
+          coords = [];
+          
+          for(var i = 1 ; i < data.length ; i++){
+            coords[i] = data[i][5].split(',');
+          }
+
+          for(var j = 1 ; j < data.length ; j++){
+            line = [];
+            for(var i = 0; i < coords[j].length ; i++){
+              var coord = new google.maps.LatLng(coords[j][i].split(' ')[1], coords[j][i].split(' ')[0]);
+              line.push(coord);
+            }
+            lines.push(line);
+          }
+          var infowindow = new google.maps.InfoWindow({
+            content: '1'
+          });
+          google.maps.Polyline.prototype.getPosition = function() {
+             return this.getPath().getAt(0);
+          }
+          var path = []
+          var info = []
+          for(let i = 1; i < data.length ; i++){
+            var flightPath = new google.maps.Polyline({
+              path: lines[i],
+              geodesic: true,
+              strokeColor: data[i][9],
+              strokeOpacity: 0.4,
+              strokeWeight: parseInt(data[i][11]),
+              zIndex: 2
+            });
+            path.push(flightPath);
+
+            var infowindow = new google.maps.InfoWindow(); 
+            google.maps.event.addListener(flightPath, 'mouseover', function(event){
+
+              const line = document.querySelector('.line');
+              line.textContent = data[i][2];
+              const usage = document.querySelector('.usage');
+              usage.textContent = data[i][10];
+
+
+              
+              infowindow.setContent(data[i][2]+"</br>"+data[i][10]);
+              infowindow.setPosition(event.latLng);
+              infowindow.open(map);
+
+
+
+            });
+            google.maps.event.addListener(flightPath, 'mouseout', function(event){
+
+              infowindow.close(map);
+              const line = document.querySelector('.line');
+              line.textContent = "";
+              const usage = document.querySelector('.usage');
+              usage.textContent = "";
+            });
+            flightPath.setMap(map);
+            
+          }
+        });
+
+        
+
+        var contentString = '<div id="content">'+
+            '<div id="siteNotice">'+
+            '</div>'+
+            '<h1 id="firstHeading" class="firstHeading">Uluru</h1>'+
+            '<div id="bodyContent">'+
+            '<p><b>Uluru</b>, also referred to as <b>Ayers Rock</b>, is a large ' +
+            'sandstone rock formation in the southern part of the '+
+            'Northern Territory, central Australia. It lies 335&#160;km (208&#160;mi) '+
+            'south west of the nearest large town, Alice Springs; 450&#160;km '+
+            '(280&#160;mi) by road. Kata Tjuta and Uluru are the two major '+
+            'features of the Uluru - Kata Tjuta National Park. Uluru is '+
+            'sacred to the Pitjantjatjara and Yankunytjatjara, the '+
+            'Aboriginal people of the area. It has many springs, waterholes, '+
+            'rock caves and ancient paintings. Uluru is listed as a World '+
+            'Heritage Site.</p>'+
+            '<p>Attribution: Uluru, <a href="https://en.wikipedia.org/w/index.php?title=Uluru&oldid=297882194">'+
+            'https://en.wikipedia.org/w/index.php?title=Uluru</a> '+
+            '(last visited June 22, 2009).</p>'+
+            '</div>'+
+            '</div>';
+
+        var infowindow = new google.maps.InfoWindow({
+          content: contentString
+        });
+
+        var hospital = "https://i.ibb.co/brpFDv6/hospital.png";
+        var mark = new google.maps.Marker({
+          position: {lat: 23.2, lng: 120.1},
+          map: map,
+          icon: hospital
+        });
+        $.get("https://docs.google.com/spreadsheets/d/e/2PACX-1vTzGvno7WqXWSWwT9oAVlYxNKS2TWbMkcNXOpDblICOHfmISdewyTSb7IWqI6e7hDtfiV80RXuVdSQ-/pub?gid=1766665385&single=true&output=csv", function(CSVdata){
+          hospitaldata = $.csv.toArrays(CSVdata);
+
+
+          for(let i = 1; i < hospitaldata.length ; i++){
+            var marker = new google.maps.Marker({
+              position: new google.maps.LatLng(hospitaldata[i][4], hospitaldata[i][3]),
+              map: map,
+              icon: hospital,
+              zIndex:3
+            });
+            hospitals.push(marker);
+            var infowindow = new google.maps.InfoWindow();
+            google.maps.event.addListener(marker, 'mouseover', function(){
+              infowindow.setContent(hospitaldata[i][1]);
+              infowindow.open(map, markers[i]);
+            });
+            google.maps.event.addListener(marker, 'mouseout', function(){
+              infowindow.close();
+            });
+            
+
+          }
+
+
+        });
+        $('input[type=radio][name=myRadios]').change(function() {
+          if (this.value == 'on') {
+            for(var i=0; i< hospitals.length; i++){
+              hospitals[i].setMap(map);
+            }
+          }
+          else if (this.value == 'off') {
+            for(var i=0; i< hospitals.length; i++){
+              hospitals[i].setMap(null);
+            }
+          }
+        });
+
+
+      }
+
+
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAYNlCbkxK_P5Sdr4d5AVBtdp8XFjAXr3A&callback=initMap">
+    </script>
+  </body>
+</html>
+
