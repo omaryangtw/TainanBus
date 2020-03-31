@@ -43,17 +43,17 @@
       </div>
          
       <div class="row">
-        <h4><div class="col-md-6">老年人口</div></h4>
+        <h4><div class="col-md-6 pop_label">老年人口</div></h4>
         <h4><div class="col-md-6  elderly"></div></h4>
       </div>
 
       <hr></hr>
       <h4>人口底圖</h4>
       <form>
-        <input type="radio" name="population" id="population" >  總人口 ( 佔全市人口比例 ) </input></br>
-        <input type="radio" name="population" id="infant" >  0 - 2 歲 ( 佔此里人口比例 ) </input></br>
-        <input type="radio" name="population" id="child" >  3 - 5 歲 ( 佔此里人口比例 )</input></br>
-        <input type="radio" name="population" id="below5" >  0 - 5 歲 ( 佔此里人口比例 ) </input></br>
+        <input type="radio" name="population" id="normal_population" >  總人口 ( 佔全市人口比例 ) </input></br>
+        <input type="radio" name="population" id="normal_infant" >  0 - 2 歲 ( 佔此里人口比例 ) </input></br>
+        <input type="radio" name="population" id="normal_child" >  3 - 5 歲 ( 佔此里人口比例 )</input></br>
+        <input type="radio" name="population" id="normal_below5" >  0 - 5 歲 ( 佔此里人口比例 ) </input></br>
         <input type="radio" name="population" id="elder_percentage" checked>  老人人口 ( 佔此里人口比例 ) </input>
       </form>
       <hr></hr>
@@ -80,6 +80,10 @@
         var green = decimal2hex(g);
         var blue = decimal2hex(b);
         return '#'+String(red)+String(green)+String(blue);
+      }
+      var transparency = function(number){
+
+        return Number(number)==0?0:0.3;
       }
 
       function initMap() {
@@ -254,6 +258,12 @@
           styles: style
         });
         var normal_elderly = [];
+        var normal_populations = [];
+        var normal_infants = [];
+        var normal_children = [];
+        var normal_under5s = [];
+        var indigenous_populations = [];
+        var indigenous_elderlies = [];
         $.get("https://docs.google.com/spreadsheets/d/e/2PACX-1vTzGvno7WqXWSWwT9oAVlYxNKS2TWbMkcNXOpDblICOHfmISdewyTSb7IWqI6e7hDtfiV80RXuVdSQ-/pub?gid=2034908759&single=true&output=csv", function(CSVdata){
           villagedata = $.csv.toArrays(CSVdata);
           polygons = [];
@@ -274,8 +284,46 @@
           google.maps.Polyline.prototype.getPosition = function() {
              return this.getPath().getAt(0);
           }
+          var normal_elderly_max = parseInt(villagedata[1][11]);
+          var normal_elderly_min = parseInt(villagedata[1][11]);
+          var normal_population_max = parseInt(villagedata[1][10]);
+          var normal_population_min = parseInt(villagedata[1][10]);
+          var normal_infant_max = parseInt(villagedata[1][12]);
+          var normal_infant_min = parseInt(villagedata[1][12]);
+          var normal_child_max = parseInt(villagedata[1][13]);
+          var normal_child_min = parseInt(villagedata[1][13]);          
+          var normal_under5_max = parseInt(villagedata[1][14]);
+          var normal_under5_min = parseInt(villagedata[1][14]);
+          var indigenous_population_max = parseInt(villagedata[1][15]);
+          var indigenous_population_min = parseInt(villagedata[1][15]);
+          var indigenous_elderly_max = parseInt(villagedata[1][16]);
+          var indigenous_elderly_min = parseInt(villagedata[1][16]);
+          for(var i = 1; i < villagedata.length ; i++){
+            if(parseInt(villagedata[i][11]) > parseInt(normal_elderly_max))normal_elderly_max = villagedata[i][11];
+            if(parseInt(villagedata[i][11]) < parseInt(normal_elderly_min))normal_elderly_min = villagedata[i][11];
+            
+            if(parseInt(villagedata[i][12]) > parseInt(normal_infant_max))normal_infant_max = villagedata[i][12];
+            if(parseInt(villagedata[i][12]) < parseInt(normal_infant_min))normal_infant_min = villagedata[i][12];
+
+            if(parseInt(villagedata[i][13]) > parseInt(normal_child_max))normal_child_max = villagedata[i][13];
+            if(parseInt(villagedata[i][13]) < parseInt(normal_child_min))normal_child_min = villagedata[i][13];
+
+            if(parseInt(villagedata[i][14]) > parseInt(normal_under5_max))normal_under5_max = villagedata[i][14];
+            if(parseInt(villagedata[i][14]) < parseInt(normal_under5_min))normal_under5_min = villagedata[i][14];
+
+            if(parseInt(villagedata[i][15]) > parseInt(indigenous_population_max))indigenous_population_max = villagedata[i][15];
+            if(parseInt(villagedata[i][15]) < parseInt(indigenous_population_min))indigenous_population_min = villagedata[i][15];
+
+            if(parseInt(villagedata[i][16]) > parseInt(indigenous_elderly_max))indigenous_elderly_max = villagedata[i][16];
+            if(parseInt(villagedata[i][16]) < parseInt(indigenous_elderly_min))indigenous_elderly_min = villagedata[i][16];
+
+            if(parseInt(villagedata[i][10]) > parseInt(normal_population_max))normal_population_max = villagedata[i][10];
+            if(parseInt(villagedata[i][10]) < parseInt(normal_population_min))normal_population_min = villagedata[i][10];
+
+          }
+
           for(let i = 1; i < villagedata.length ; i++){
-            var village = new google.maps.Polygon({
+            var elderly = new google.maps.Polygon({
               path: polygons[i],
               strokeColor: '#777777',
               strokeOpacity: 0.5,
@@ -283,20 +331,123 @@
               fillColor: rgb2hex( Math.round(219-villagedata[i+1][11]/villagedata[i+1][10]*2.5*(219-49)) , Math.round(255-villagedata[i+1][11]/villagedata[i+1][10]*2.5*(255-99)) , Math.round(219-villagedata[i+1][11]/villagedata[i+1][10]*2.5*(219-49))),
               fillOpacity: villagedata[i+1][11]/villagedata[i+1][10]
             });
-            normal_elderly.push(village);
+            normal_elderly.push(elderly);
+            elderly.setMap(map);
+
+            var normal_population = new google.maps.Polygon({
+              path: polygons[i],
+              strokeColor: '#777777',
+              strokeOpacity: 0.5,
+              strokeWeight: 0.2,
+              fillColor: rgb2hex( Math.round(219- (219-49)*((villagedata[i+1][10]-normal_population_min)/(normal_population_max - normal_population_min))),
+                Math.round(255- (255-99)*((villagedata[i+1][10]-normal_population_min)/(normal_population_max - normal_population_min))),
+                Math.round(219- (219-49)*((villagedata[i+1][10]-normal_population_min)/(normal_population_max - normal_population_min)))),
+              fillOpacity: transparency(villagedata[i+1][10])
+            });
+            normal_populations.push(normal_population);
+
+            var normal_infant = new google.maps.Polygon({
+              path: polygons[i],
+              strokeColor: '#777777',
+              strokeOpacity: 0.5,
+              strokeWeight: 0.2,
+              fillColor: rgb2hex( Math.round(219- (219-49)*((villagedata[i+1][12]-normal_infant_min)/(normal_infant_max - normal_infant_min))),
+                Math.round(255- (255-99)*((villagedata[i+1][12]-normal_infant_min)/(normal_infant_max - normal_infant_min))),
+                Math.round(219- (219-49)*((villagedata[i+1][12]-normal_infant_min)/(normal_infant_max - normal_infant_min)))),
+              fillOpacity: transparency(villagedata[i+1][12])
+            });
+            normal_infants.push(normal_infant);
             
-            village.setMap(map);
-            
-            google.maps.event.addListener(village, 'mouseover', function(event){
+            var normal_child = new google.maps.Polygon({
+              path: polygons[i],
+              strokeColor: '#777777',
+              strokeOpacity: 0.5,
+              strokeWeight: 0.2,
+              fillColor: rgb2hex( Math.round(219- (219-49)*((villagedata[i+1][13]-normal_child_min)/(normal_child_max - normal_child_min))),
+                Math.round(255- (255-99)*((villagedata[i+1][13]-normal_child_min)/(normal_child_max - normal_child_min))),
+                Math.round(219- (219-49)*((villagedata[i+1][13]-normal_child_min)/(normal_child_max - normal_child_min)))),
+              fillOpacity: transparency(villagedata[i+1][13])
+            });
+            normal_children.push(normal_child);
+
+            var normal_under5 = new google.maps.Polygon({
+              path: polygons[i],
+              strokeColor: '#777777',
+              strokeOpacity: 0.5,
+              strokeWeight: 0.2,
+              fillColor: rgb2hex( Math.round(219- (219-49)*((villagedata[i+1][14]-normal_under5_min)/(normal_under5_max - normal_under5_min))),
+                Math.round(255- (255-99)*((villagedata[i+1][14]-normal_under5_min)/(normal_under5_max - normal_under5_min))),
+                Math.round(219- (219-49)*((villagedata[i+1][14]-normal_under5_min)/(normal_under5_max - normal_under5_min)))),
+              fillOpacity: transparency(villagedata[i+1][14])
+            });
+            normal_under5s.push(normal_under5);
+
+            google.maps.event.addListener(elderly, 'mouseover', function(event){
               normal_elderly[i-1].setOptions({fillOpacity: 0.9});
               const villname = document.querySelector('.village');
               villname.textContent = villagedata[i+1][3]+villagedata[i+1][4];
               const elderly = document.querySelector('.elderly');
               elderly.textContent = villagedata[i+1][11]+'('+Math.round(villagedata[i+1][11]/villagedata[i+1][10]*100)+'%)';
             });
-            google.maps.event.addListener(village, 'mouseout', function(event){
+            google.maps.event.addListener(elderly, 'mouseout', function(event){
               normal_elderly[i-1].setOptions({fillOpacity: villagedata[i][11]/villagedata[i][10]});
+              const villname = document.querySelector('.elderly');
+              villname.textContent = "";
+              const elderly = document.querySelector('.elderly');
+              elderly.textContent = "";
+            });
+            google.maps.event.addListener(normal_under5, 'mouseover', function(event){
+              normal_under5s[i-1].setOptions({fillOpacity: 0.9});
               const villname = document.querySelector('.village');
+              villname.textContent = villagedata[i+1][3]+villagedata[i+1][4];
+              const elderly = document.querySelector('.elderly');
+              elderly.textContent = villagedata[i+1][14]+'('+Math.round(villagedata[i+1][14]/villagedata[i+1][10]*1000)+'‰)';
+            });
+            google.maps.event.addListener(normal_under5, 'mouseout', function(event){
+              normal_under5s[i-1].setOptions({fillOpacity: 0.3});
+              const villname = document.querySelector('.elderly');
+              villname.textContent = "";
+              const elderly = document.querySelector('.elderly');
+              elderly.textContent = "";
+            });
+            google.maps.event.addListener(normal_infant, 'mouseover', function(event){
+              normal_infants[i-1].setOptions({fillOpacity: 0.9});
+              const villname = document.querySelector('.village');
+              villname.textContent = villagedata[i+1][3]+villagedata[i+1][4];
+              const elderly = document.querySelector('.elderly');
+              elderly.textContent = villagedata[i+1][12]+'('+Math.round(villagedata[i+1][12]/villagedata[i+1][10]*1000)+'‰)';
+            });
+            google.maps.event.addListener(normal_infant, 'mouseout', function(event){
+              normal_infants[i-1].setOptions({fillOpacity: 0.3});
+              const villname = document.querySelector('.elderly');
+              villname.textContent = "";
+              const elderly = document.querySelector('.elderly');
+              elderly.textContent = "";
+            });
+            google.maps.event.addListener(normal_child, 'mouseover', function(event){
+              normal_children[i-1].setOptions({fillOpacity: 0.9});
+              const villname = document.querySelector('.village');
+              villname.textContent = villagedata[i+1][3]+villagedata[i+1][4];
+              const elderly = document.querySelector('.elderly');
+              elderly.textContent = villagedata[i+1][13]+'('+Math.round(villagedata[i+1][13]/villagedata[i+1][10]*1000)+'‰)';
+            });
+            google.maps.event.addListener(normal_child, 'mouseout', function(event){
+              normal_children[i-1].setOptions({fillOpacity: 0.3});
+              const villname = document.querySelector('.elderly');
+              villname.textContent = "";
+              const elderly = document.querySelector('.elderly');
+              elderly.textContent = "";
+            });
+            google.maps.event.addListener(normal_population, 'mouseover', function(event){
+              normal_populations[i-1].setOptions({fillOpacity: 0.9});
+              const villname = document.querySelector('.village');
+              villname.textContent = villagedata[i+1][3]+villagedata[i+1][4];
+              const elderly = document.querySelector('.elderly');
+              elderly.textContent = villagedata[i+1][10]+'('+Math.round(villagedata[i+1][11]/villagedata[i+1][10]*100)+'‰)';
+            });
+            google.maps.event.addListener(normal_population, 'mouseout', function(event){
+              normal_populations[i-1].setOptions({fillOpacity: 0.3});
+              const villname = document.querySelector('.elderly');
               villname.textContent = "";
               const elderly = document.querySelector('.elderly');
               elderly.textContent = "";
@@ -407,17 +558,69 @@
             }
           }  
         });
-        $('input[type=checkbox][id=elder_percentage]').click(function(){
+        $('input[type=radio][id=elder_percentage]').click(function(){
           if (this.checked) {
+            document.querySelector('.pop_label').textContent = "老年人口"
+
             for(var i=0; i< normal_elderly.length; i++){
+              normal_populations[i].setMap(null);
+              normal_infants[i].setMap(null);
+              normal_children[i].setMap(null);
+              normal_under5s[i].setMap(null);
               normal_elderly[i].setMap(map);
             }
           }
-          else  {
-            for(var i=0; i< normal_elderly.length; i++){
+        });
+        $('input[type=radio][id=normal_population]').click(function(){
+          if (this.checked) {
+            document.querySelector('.pop_label').textContent = "總人口"
+
+            for(var i=0; i< normal_populations.length; i++){
+              normal_infants[i].setMap(null);
+              normal_children[i].setMap(null);
+              normal_under5s[i].setMap(null);
               normal_elderly[i].setMap(null);
+              normal_populations[i].setMap(map);
             }
-          }  
+          }
+        });
+        $('input[type=radio][id=normal_infant]').click(function(){
+          if (this.checked) {
+            document.querySelector('.pop_label').textContent = "0-2歲"
+
+            for(var i=0; i< normal_infants.length; i++){
+              normal_populations[i].setMap(null);
+              normal_children[i].setMap(null);
+              normal_under5s[i].setMap(null);
+              normal_elderly[i].setMap(null);
+              normal_infants[i].setMap(map);
+            }
+          }
+        });
+        $('input[type=radio][id=normal_child]').click(function(){
+          if (this.checked) {
+            document.querySelector('.pop_label').textContent = "3-5歲"
+            for(var i=0; i< normal_children.length; i++){
+              normal_populations[i].setMap(null);
+              normal_infants[i].setMap(null);
+              normal_under5s[i].setMap(null);
+              normal_elderly[i].setMap(null);
+              normal_children[i].setMap(map);
+            }
+          }
+        });
+        $('input[type=radio][id=normal_below5]').click(function(){
+          if (this.checked) {
+            document.querySelector('.pop_label').textContent = "0-5歲"
+
+            for(var i=0; i< normal_under5s.length; i++){
+              normal_populations[i].setMap(null);
+              normal_infants[i].setMap(null);
+              normal_children[i].setMap(null);
+              normal_elderly[i].setMap(null);
+              normal_under5s[i].setMap(map);
+            }
+          } 
         });
         $('input[type=radio][name=myRadios]').change(function() {
           if (this.value == 'on') {
