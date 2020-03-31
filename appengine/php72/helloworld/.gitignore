@@ -1,0 +1,9 @@
+.DS_Store
+venv/
+test/
+node_modules/
+*.csv
+.gcloudignore
+icons/
+package-lock.json
+*.py
