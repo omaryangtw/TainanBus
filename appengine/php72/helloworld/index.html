@@ -34,11 +34,6 @@
     </div>
     <div id="map" class="col-md-8"></div>
     <div id="list" class="col-md-4">
-      <div class="row">
-        <div class="col-md-4">公車：</div>
-        <div class="col-md-4 line"><h3></h3></div>
-        <div class="col-md-4 usage"></div>
-      </div>
       
       <div class="row">
         <h4><div class="col-md-5">行政區</div></h4>
@@ -58,7 +53,12 @@
         <input type="radio" name="population" id="normal_child" >  3 - 5 歲 ( 佔此里人口比例 )</input></br>
         <input type="radio" name="population" id="normal_below5" >  0 - 5 歲 ( 佔此里人口比例 ) </input></br>
         <input type="radio" name="population" id="elder_percentage" checked>  老人人口 ( 佔此里人口比例 ) </input>
+        <hr style="border: 0;height: 1px;background-image: linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,0.75), rgba(0,0,0,0));"></hr>
+        <input type="radio" name="population" id="indigenous_population" >  原住民人口 ( 佔台南原住民比例 )</input></br>
+        <input type="radio" name="population" id="indigenous_elderly" >  原住民55+ ( 佔此里原住民比例 ) </input></br>
       </form>
+
+
       <hr></hr>
 
       <div><h4><row><input type="checkbox" id="hospital" checked>  醫院</input></row></h4></div>
@@ -86,7 +86,7 @@
       }
       var transparency = function(number){
 
-        return Number(number)==0?0:0.3;
+        return Number(number)==0?0:0.5;
       }
 
       function initMap() {
@@ -300,6 +300,7 @@
           var normal_under5_min = parseInt(villagedata[1][14]);
           var indigenous_population_max = parseInt(villagedata[1][15]);
           var indigenous_population_min = parseInt(villagedata[1][15]);
+          var indigenous_sum = 0;
           var indigenous_elderly_max = parseInt(villagedata[1][16]);
           var indigenous_elderly_min = parseInt(villagedata[1][16]);
           for(var i = 1; i < villagedata.length ; i++){
@@ -325,6 +326,7 @@
             if(parseInt(villagedata[i][10]) < parseInt(normal_population_min))normal_population_min = villagedata[i][10];
 
             normal_population_sum += parseInt(villagedata[i][10]);
+            indigenous_sum += parseInt(villagedata[i][15]);
           }
 
           for(let i = 1; i < villagedata.length ; i++){
@@ -334,7 +336,7 @@
               strokeOpacity: 0.5,
               strokeWeight: 0.2,
               fillColor: rgb2hex( Math.round(219-villagedata[i+1][11]/villagedata[i+1][10]*2.5*(219-49)) , Math.round(255-villagedata[i+1][11]/villagedata[i+1][10]*2.5*(255-99)) , Math.round(219-villagedata[i+1][11]/villagedata[i+1][10]*2.5*(219-49))),
-              fillOpacity: villagedata[i+1][11]/villagedata[i+1][10]
+              fillOpacity: 0.5
             });
             normal_elderly.push(elderly);
             elderly.setMap(map);
@@ -387,15 +389,39 @@
             });
             normal_under5s.push(normal_under5);
 
+            var indigenous_population = new google.maps.Polygon({
+              path: polygons[i],
+              strokeColor: '#777777',
+              strokeOpacity: 0.5,
+              strokeWeight: 0.2,
+              fillColor: rgb2hex( Math.round(219- (219-49)*((villagedata[i+1][15]-indigenous_population_min)/(indigenous_population_max - indigenous_population_min))),
+                Math.round(255- (255-99)*((villagedata[i+1][15]-indigenous_population_min)/(indigenous_population_max - indigenous_population_min))),
+                Math.round(219- (219-49)*((villagedata[i+1][15]-indigenous_population_min)/(indigenous_population_max - indigenous_population_min)))),
+              fillOpacity: transparency(villagedata[i+1][15])
+            });
+            indigenous_populations.push(indigenous_population);
+
+            var indigenous_elderly = new google.maps.Polygon({
+              path: polygons[i],
+              strokeColor: '#777777',
+              strokeOpacity: 0.5,
+              strokeWeight: 0.2,
+              fillColor: rgb2hex( Math.round(219- (219-49)*(villagedata[i+1][16]/villagedata[i+1][15])),
+                Math.round(255- (255-99)*(villagedata[i+1][16]/villagedata[i+1][15])),
+                Math.round(219- (219-49)*(villagedata[i+1][16]/villagedata[i+1][15]))),
+              fillOpacity: transparency(villagedata[i+1][16])
+            });
+            indigenous_elderlies.push(indigenous_elderly);
+
             google.maps.event.addListener(elderly, 'mouseover', function(event){
               normal_elderly[i-1].setOptions({fillOpacity: 0.9});
               const villname = document.querySelector('.village');
               villname.textContent = villagedata[i+1][3]+villagedata[i+1][4];
               const elderly = document.querySelector('.elderly');
-              elderly.textContent = villagedata[i+1][11]+'('+Math.round(villagedata[i+1][11]/villagedata[i+1][10]*100)+'%)';
+              elderly.textContent = villagedata[i+1][11]+'('+Math.round(villagedata[i+1][11]/villagedata[i+1][10]*1000)+'‰)';
             });
             google.maps.event.addListener(elderly, 'mouseout', function(event){
-              normal_elderly[i-1].setOptions({fillOpacity: villagedata[i][11]/villagedata[i][10]});
+              normal_elderly[i-1].setOptions({fillOpacity: 0.5});
               const villname = document.querySelector('.elderly');
               villname.textContent = "";
               const elderly = document.querySelector('.elderly');
@@ -409,7 +435,7 @@
               elderly.textContent = villagedata[i+1][14]+'('+Math.round(villagedata[i+1][14]/villagedata[i+1][10]*1000)+'‰)';
             });
             google.maps.event.addListener(normal_under5, 'mouseout', function(event){
-              normal_under5s[i-1].setOptions({fillOpacity: 0.3});
+              normal_under5s[i-1].setOptions({fillOpacity: 0.5});
               const villname = document.querySelector('.elderly');
               villname.textContent = "";
               const elderly = document.querySelector('.elderly');
@@ -423,7 +449,7 @@
               elderly.textContent = villagedata[i+1][12]+'('+Math.round(villagedata[i+1][12]/villagedata[i+1][10]*1000)+'‰)';
             });
             google.maps.event.addListener(normal_infant, 'mouseout', function(event){
-              normal_infants[i-1].setOptions({fillOpacity: 0.3});
+              normal_infants[i-1].setOptions({fillOpacity: 0.5});
               const villname = document.querySelector('.elderly');
               villname.textContent = "";
               const elderly = document.querySelector('.elderly');
@@ -437,26 +463,58 @@
               elderly.textContent = villagedata[i+1][13]+'('+Math.round(villagedata[i+1][13]/villagedata[i+1][10]*1000)+'‰)';
             });
             google.maps.event.addListener(normal_child, 'mouseout', function(event){
-              normal_children[i-1].setOptions({fillOpacity: 0.3});
+              normal_children[i-1].setOptions({fillOpacity: 0.5});
               const villname = document.querySelector('.elderly');
               villname.textContent = "";
               const elderly = document.querySelector('.elderly');
               elderly.textContent = "";
             });
-            google.maps.event.addListener(normal_population, 'mouseover', function(event){
-              normal_populations[i-1].setOptions({fillOpacity: 0.9});
-              const villname = document.querySelector('.village');
-              villname.textContent = villagedata[i+1][3]+villagedata[i+1][4];
-              const elderly = document.querySelector('.elderly');
-              elderly.textContent = villagedata[i+1][10]+'('+Math.round(villagedata[i+1][10]/normal_population_sum*10000)+'‱)';
-            });
+              google.maps.event.addListener(normal_population, 'mouseover', function(event){
+                normal_populations[i-1].setOptions({fillOpacity: 0.9});
+                const villname = document.querySelector('.village');
+                villname.textContent = villagedata[i+1][3]+villagedata[i+1][4];
+                const elderly = document.querySelector('.elderly');
+                elderly.textContent = villagedata[i+1][10]+'('+Math.round(villagedata[i+1][10]/normal_population_sum*10000)+'‱)';
+              });
             google.maps.event.addListener(normal_population, 'mouseout', function(event){
-              normal_populations[i-1].setOptions({fillOpacity: 0.3});
+              normal_populations[i-1].setOptions({fillOpacity: 0.5});
               const villname = document.querySelector('.elderly');
               villname.textContent = "";
               const elderly = document.querySelector('.elderly');
               elderly.textContent = "";
             });
+            if(parseInt(villagedata[i+1][15]) != 0){
+              google.maps.event.addListener(indigenous_population, 'mouseover', function(event){
+                indigenous_populations[i-1].setOptions({fillOpacity: 0.9});
+                const villname = document.querySelector('.village');
+                villname.textContent = villagedata[i+1][3]+villagedata[i+1][4];
+                const elderly = document.querySelector('.elderly');
+                elderly.textContent = villagedata[i+1][15]+'('+Math.round(villagedata[i+1][15]/indigenous_sum*1000)+'‰)';
+              });
+              google.maps.event.addListener(indigenous_population, 'mouseout', function(event){
+                indigenous_populations[i-1].setOptions({fillOpacity: 0.5});
+                const villname = document.querySelector('.elderly');
+                villname.textContent = "";
+                const elderly = document.querySelector('.elderly');
+                elderly.textContent = "";
+              });
+            }
+            if(parseInt(villagedata[i+1][16]) != 0){
+              google.maps.event.addListener(indigenous_elderly, 'mouseover', function(event){
+                indigenous_elderlies[i-1].setOptions({fillOpacity: 0.9});
+                const villname = document.querySelector('.village');
+                villname.textContent = villagedata[i+1][3]+villagedata[i+1][4];
+                const elderly = document.querySelector('.elderly');
+                elderly.textContent = villagedata[i+1][16]+'('+Math.round(villagedata[i+1][16]/villagedata[i+1][15]*1000)+'‰)';
+              });
+              google.maps.event.addListener(indigenous_elderly, 'mouseout', function(event){
+                indigenous_elderlies[i-1].setOptions({fillOpacity: 0.5});
+                const villname = document.querySelector('.elderly');
+                villname.textContent = "";
+                const elderly = document.querySelector('.elderly');
+                elderly.textContent = "";
+              });
+            }
           }
         });
         routes = []
@@ -486,7 +544,7 @@
               path: lines[i],
               geodesic: true,
               strokeColor: data[i][9],
-              strokeOpacity: 0.4,
+              strokeOpacity: 0.5,
               strokeWeight: parseInt(data[i][11]),
               zIndex: 2
             });
@@ -494,23 +552,12 @@
 
             var infowindow = new google.maps.InfoWindow(); 
             google.maps.event.addListener(route, 'mouseover', function(event){
-
-              const line = document.querySelector('.line');
-              line.textContent = data[i][2];
-              const usage = document.querySelector('.usage');
-              usage.textContent = data[i][10];
-
-              infowindow.setContent(data[i][2]+"</br>"+data[i][10]);
+              infowindow.setContent("路線："+data[i][2]+"</br>"+"運量："+data[i][10]);
               infowindow.setPosition(event.latLng);
               infowindow.open(map);
             });
             google.maps.event.addListener(route, 'mouseout', function(event){
-
               infowindow.close(map);
-              const line = document.querySelector('.line');
-              line.textContent = "";
-              const usage = document.querySelector('.usage');
-              usage.textContent = "";
             });
             route.setMap(map);
             
@@ -572,6 +619,8 @@
               normal_infants[i].setMap(null);
               normal_children[i].setMap(null);
               normal_under5s[i].setMap(null);
+              indigenous_elderlies[i].setMap(null);
+              indigenous_populations[i].setMap(null);
               normal_elderly[i].setMap(map);
             }
           }
@@ -585,6 +634,8 @@
               normal_children[i].setMap(null);
               normal_under5s[i].setMap(null);
               normal_elderly[i].setMap(null);
+              indigenous_elderlies[i].setMap(null);
+              indigenous_populations[i].setMap(null);
               normal_populations[i].setMap(map);
             }
           }
@@ -598,6 +649,8 @@
               normal_children[i].setMap(null);
               normal_under5s[i].setMap(null);
               normal_elderly[i].setMap(null);
+              indigenous_elderlies[i].setMap(null);
+              indigenous_populations[i].setMap(null);
               normal_infants[i].setMap(map);
             }
           }
@@ -610,6 +663,8 @@
               normal_infants[i].setMap(null);
               normal_under5s[i].setMap(null);
               normal_elderly[i].setMap(null);
+              indigenous_elderlies[i].setMap(null);
+              indigenous_populations[i].setMap(null);
               normal_children[i].setMap(map);
             }
           }
@@ -623,7 +678,40 @@
               normal_infants[i].setMap(null);
               normal_children[i].setMap(null);
               normal_elderly[i].setMap(null);
+              indigenous_elderlies[i].setMap(null);
+              indigenous_populations[i].setMap(null);
               normal_under5s[i].setMap(map);
+            }
+          } 
+        });
+        $('input[type=radio][id=indigenous_population]').click(function(){
+          if (this.checked) {
+            document.querySelector('.pop_label').textContent = "原住民人口"
+
+            for(var i=0; i< indigenous_populations.length; i++){
+              normal_populations[i].setMap(null);
+              normal_infants[i].setMap(null);
+              normal_children[i].setMap(null);
+              normal_elderly[i].setMap(null);
+              normal_under5s[i].setMap(null);
+              indigenous_elderlies[i].setMap(null);
+              indigenous_populations[i].setMap(map);
+            }
+          } 
+        });
+        $('input[type=radio][id=indigenous_elderly]').click(function(){
+          if (this.checked) {
+            document.querySelector('.pop_label').textContent = "原住民55+"
+
+            for(var i=0; i<indigenous_elderlies.length; i++){
+              normal_populations[i].setMap(null);
+              normal_infants[i].setMap(null);
+              normal_children[i].setMap(null);
+              normal_elderly[i].setMap(null);
+              normal_under5s[i].setMap(null);
+              indigenous_populations[i].setMap(null);
+              indigenous_elderlies[i].setMap(map);
+
             }
           } 
         });
